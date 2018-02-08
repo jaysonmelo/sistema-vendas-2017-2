@@ -33,4 +33,7 @@ public class ItemVenda {
 		this.valorTotal = valorTotal;
 	}
 	
+	public void calcularValorTotal(){
+		this.valorTotal = qtde * this.produto.getPrecoUnitario();
+	}
 }

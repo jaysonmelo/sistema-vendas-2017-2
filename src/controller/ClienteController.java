@@ -9,13 +9,17 @@ import model.Cliente;
 public class ClienteController {
 
 	public void salvar(Cliente cliente) throws Exception{
+		String msg = "";
 		if(cliente.getNome().trim().equals("") || 
 				cliente.getNome().length() < 3){
-			throw new Exception("Nome inválido");
+			msg += "Nome Inválido\n";
 		}
 		if(cliente.getCpf().trim().equals("") || 
 				!isCPF(cliente.getCpf()) ){
-			throw new Exception("CPF inválido");
+			msg += "CPF Inválido\n";
+		}
+		if (!msg.equals("")){
+			throw new Exception(msg);
 		}
 		ClienteDAO.obterInstancia().salvar(cliente);
 	}

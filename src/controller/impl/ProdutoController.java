@@ -25,7 +25,7 @@ public class ProdutoController implements IProdutoController{
 
 	@Override
 	public List<Produto> listarProdutos() {
-		return ProdutoDAO.obterInstancia().listaProdutos;
+		return ProdutoDAO.obterInstancia().listarTodos();
 	}
 	
 }

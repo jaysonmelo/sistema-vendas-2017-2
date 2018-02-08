@@ -1,40 +1,52 @@
 package view;
 
 import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JInternalFrame;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.JPanel;
-import javax.swing.border.TitledBorder;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.JComboBox;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.JTextField;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.border.TitledBorder;
 
 import controller.ClienteController;
 import controller.IProdutoController;
+import controller.IVendaController;
 import controller.impl.ProdutoController;
+import controller.impl.VendaController;
 import model.Cliente;
 import model.ItemVenda;
 import model.ItemVendaTableModel;
 import model.Produto;
-
-import javax.swing.ImageIcon;
+import model.Venda;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 
 public class RegistrarVendaUI extends JInternalFrame {
 	private JTextField jtfDataEmissao;
 	private JTextField jtfQtde;
 	private JTable jtProdutosVenda;
+	
 	private ClienteController clienteControl = new ClienteController();
 	private IProdutoController produtoControl = new ProdutoController();
+	private IVendaController vendaControl = new VendaController();
+	
+	private List<ItemVenda> itensVenda = new ArrayList<>();
+	private JComboBox<Cliente> jcbCliente;
 	/**
 	 * Launch the application.
 	 */
@@ -59,6 +71,8 @@ public class RegistrarVendaUI extends JInternalFrame {
 		setTitle("Registrar Venda");
 		setBounds(100, 100, 560, 444);
 		
+		JLabel lblSomaTotal = new JLabel("0,00");
+		
 		JPanel jpDados = new JPanel();
 		jpDados.setBorder(new TitledBorder(null, "Dados da Venda", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		
@@ -66,6 +80,18 @@ public class RegistrarVendaUI extends JInternalFrame {
 		jpProdutos.setBorder(new TitledBorder(null, "Produtos", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		
 		JButton btnSalvar = new JButton("Salvar");
+		btnSalvar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				Venda venda = new Venda();
+				DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+				venda.setDataEmissao(LocalDate.parse(jtfDataEmissao.getText(),dtf));
+				venda.setCliente((Cliente)jcbCliente.getSelectedItem());
+				venda.setValorTotal(Double.parseDouble(lblSomaTotal.getText()));
+				venda.setItensVenda(itensVenda);
+				
+				vendaControl.salvarVenda(venda);
+			}
+		});
 		btnSalvar.setIcon(new ImageIcon(RegistrarVendaUI.class.getResource("/img/save.png")));
 		
 		JButton btnCancelar = new JButton("Cancelar");
@@ -98,6 +124,8 @@ public class RegistrarVendaUI extends JInternalFrame {
 					.addContainerGap(13, Short.MAX_VALUE))
 		);
 		
+		
+		
 		JLabel lblQuantidade = new JLabel("Quantidade:");
 		
 		jtfQtde = new JTextField();
@@ -114,16 +142,47 @@ public class RegistrarVendaUI extends JInternalFrame {
 		jcbProduto.setModel(modelProduto);
 		
 		JButton jbAdicionar = new JButton("Adicionar");
+		jbAdicionar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				int qtde = Integer.parseInt(jtfQtde.getText());
+				Produto prod = (Produto)jcbProduto.getSelectedItem();
+				
+				ItemVenda item = new ItemVenda();
+				item.setQtde(qtde);
+				item.setProduto(prod);
+				item.calcularValorTotal();
+				
+				itensVenda.add(item);
+				
+				ItemVendaTableModel modelItemVenda = new ItemVendaTableModel(itensVenda);
+				jtProdutosVenda.setModel(modelItemVenda);
+				
+				lblSomaTotal.setText(calcularValorTotal().toString());
+			}
+		});
 		jbAdicionar.setIcon(new ImageIcon(RegistrarVendaUI.class.getResource("/img/plus.png")));
 		
 		JScrollPane jspProdutos = new JScrollPane();
 		
 		JButton btnRemover = new JButton("Remover");
+		btnRemover.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				int linhaSelecionada = jtProdutosVenda.getSelectedRow();
+				
+				itensVenda.remove(linhaSelecionada);
+				
+				ItemVendaTableModel modelItemVenda = new ItemVendaTableModel(itensVenda);
+				jtProdutosVenda.setModel(modelItemVenda);
+				
+				lblSomaTotal.setText(calcularValorTotal().toString());
+			}
+		});
 		btnRemover.setIcon(new ImageIcon(RegistrarVendaUI.class.getResource("/img/close.png")));
 		
 		JLabel lblValorTotalr = new JLabel("Valor Total(R$):");
 		
-		JLabel lblSomaTotal = new JLabel("0,00");
 		GroupLayout gl_jpProdutos = new GroupLayout(jpProdutos);
 		gl_jpProdutos.setHorizontalGroup(
 			gl_jpProdutos.createParallelGroup(Alignment.LEADING)
@@ -196,7 +255,7 @@ public class RegistrarVendaUI extends JInternalFrame {
 			modelCliente.addElement(cliente);
 		}
 		
-		JComboBox<Cliente> jcbCliente = new JComboBox<>();
+		jcbCliente = new JComboBox<>();
 		jcbCliente.setModel(modelCliente);
 		
 		GroupLayout gl_jpDados = new GroupLayout(jpDados);
@@ -232,4 +291,21 @@ public class RegistrarVendaUI extends JInternalFrame {
 		getContentPane().setLayout(groupLayout);
 
 	}
+	
+	public Double calcularValorTotal(){
+		Double soma = 0.0;
+		for(ItemVenda item : itensVenda){
+			soma += item.getValorTotal();
+		}
+		return soma;
+	}
 }
+
+
+
+
+
+
+
+
+
